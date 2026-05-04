@@ -6,13 +6,16 @@ using UnityEngine;
 namespace PathFinding.BehaviourTrees
 {
 
-     // UntilSuccess
+    // UntilSuccess
     // Repeat
-    public class UntilFail : Node {
+    public class UntilFail : Node
+    {
         public UntilFail(string name) : base(name) { }
-        
-        public override Status Process() {
-            if (children[0].Process() == Status.Failure) {
+
+        public override Status Process()
+        {
+            if (children[0].Process() == Status.Failure)
+            {
                 Reset();
                 return Status.Failure;
             }
@@ -20,12 +23,15 @@ namespace PathFinding.BehaviourTrees
             return Status.Running;
         }
     }
-    
-    public class Inverter : Node {
+
+    public class Inverter : Node
+    {
         public Inverter(string name) : base(name) { }
-        
-        public override Status Process() {
-            switch (children[0].Process()) {
+
+        public override Status Process()
+        {
+            switch (children[0].Process())
+            {
                 case Status.Running:
                     return Status.Running;
                 case Status.Failure:
@@ -43,22 +49,27 @@ namespace PathFinding.BehaviourTrees
         public RandomSelector(string name, int priority = 0) : base(name, priority) { }
     }
     */
-    public class PrioritySelector : Selector {
+    public class PrioritySelector : Selector
+    {
         List<Node> sortedChildren;
         List<Node> SortedChildren => sortedChildren ??= SortChildren();
-        
+
         protected virtual List<Node> SortChildren() => children.OrderByDescending(child => child.priority).ToList();
-        
+
         public PrioritySelector(string name, int priority = 0) : base(name, priority) { }
-        
-        public override void Reset() {
+
+        public override void Reset()
+        {
             base.Reset();
             sortedChildren = null;
         }
-        
-        public override Status Process() {
-            foreach (var child in SortedChildren) {
-                switch (child.Process()) {
+
+        public override Status Process()
+        {
+            foreach (var child in SortedChildren)
+            {
+                switch (child.Process())
+                {
                     case Status.Running:
                         return Status.Running;
                     case Status.Success:
@@ -73,8 +84,8 @@ namespace PathFinding.BehaviourTrees
             return Status.Failure;
         }
     }
-    
-    
+
+
     public class Node
     {
         public enum Status { Success, Failure, Running }
@@ -178,18 +189,20 @@ namespace PathFinding.BehaviourTrees
 
         public override Status Process()
         {
-            while (currentChild < children.Count) { 
+            if (currentChild < children.Count)
+            {
                 var status = children[currentChild].Process();
-                if(status != Status.Success)
-                {
-                    return status;
-                }
+                if (status == Status.Running) return Status.Running;
+                if (status == Status.Failure) { Reset(); return Status.Failure; }
+                // Success: avanza al siguiente hijo en el PRÓXIMO frame
                 currentChild++;
-
+                if (currentChild < children.Count) return Status.Running;
+                // Todos los hijos completados
+                Reset();
+                return Status.Success;
             }
+            Reset();
             return Status.Success;
-
-
         }
 
         public void PrintTree()
